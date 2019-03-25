@@ -438,8 +438,19 @@ pgClient.query('LISTEN events')
 pgClient.on('notification', (msg) => {
         var obj = JSON.parse(msg.payload);
         if (obj.data.id == 172) {
-            var data = obj.data
-            io.sockets.emit("172", data);
+            plainTextDateTime =  moment(obj.data.lastcommunicationtime).format('YYYY-MM-DD, h:mm:ss a');
+            var station = {
+                "id": obj.data.id,
+                "stationName": obj.data.stationname,
+                "availableBikes": obj.data.availablebikes,
+                "availableDocks": obj.data.availabledocks,
+                "is_renting": obj.data.is_renting,
+                "lastCommunicationTime": plainTextDateTime,
+                "latitude": obj.data.latitude,    
+                "longitude": obj.data.longitude,
+                "status": obj.data.status,
+                "totalDocks": obj.data.totaldocks };
+            io.sockets.emit("172", station);
         }
        
         /* if ( obj.data.id == 44){
