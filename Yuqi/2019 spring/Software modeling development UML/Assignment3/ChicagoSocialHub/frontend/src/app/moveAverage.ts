@@ -15,5 +15,4 @@
 export interface moveAverage {
     availableDocks: Number;
     lastCommunicationTime: String;
-
 }

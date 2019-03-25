@@ -27,6 +27,11 @@ import { catchError, map, tap, zip } from 'rxjs/operators';
 import { Place } from './place';
 import { Station } from './station';
 
+import * as socketio from 'socket.io-client';
+
+import { Subject, from } from  'rxjs';
+
+
 
 
 
@@ -81,7 +86,18 @@ export class PlacesService {
 
   }
 
- 
+  getUpdates(thisID) {
+    console.log("waht????")
+    let socket = socketio(this.uri);
+    let divvySub = new Subject<Station>();
+    let divvySubObservable = from(divvySub);
+
+    socket.on(thisID, (stationStatus: Station) => {
+      divvySub.next(stationStatus);
+    });
+
+    return divvySubObservable;
+  }
 
 
   findStations(placeName) {

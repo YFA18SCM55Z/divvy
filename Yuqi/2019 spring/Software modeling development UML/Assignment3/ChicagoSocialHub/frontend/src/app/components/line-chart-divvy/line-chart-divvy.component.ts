@@ -1,6 +1,6 @@
 import { Component, OnInit, Input, ViewEncapsulation, OnDestroy } from '@angular/core';
 import { Station } from '../../station';
-import { moveAverage } from '../../moveAverage';
+import { moveAverage as MoveAverage } from '../../moveAverage';
 
 import { PlacesService } from '../../places.service';
 import { Observable } from 'rxjs/Observable';
@@ -36,16 +36,16 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
   private svg: any;
   //private line: d3Shape.Line<[number, number]>;
   private line: d3Shape.Line<Station>;
-  private line1: d3Shape.Line<moveAverage>;
-  private line2: d3Shape.Line<moveAverage>;
+  private line1: d3Shape.Line<MoveAverage>;
+  private line2: d3Shape.Line<MoveAverage>;
   private xAxis: any;
   private yAxis: any;
   private subscription: ISubscription;
-  private moveAverage: moveAverage[] = [];
+  private moveAverage: MoveAverage[] = [];
   private averageHourNumber: number;
-  private moveAverageDay: moveAverage[] = [];
+  private moveAverageDay: MoveAverage[] = [];
   private averageDayNumber: number;
-  private cutMoveAverageDay: moveAverage[] = [];
+  private cutMoveAverageDay: MoveAverage[] = [];
 
 
   @Input() stationSelected$: Observable<Station[]>
@@ -56,6 +56,7 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
   constructor(private placesService: PlacesService) {
     this.width = 1300 - this.margin.left - this.margin.right;
     this.height = 500 - this.margin.top - this.margin.bottom;
+
   }
 
   ngOnInit() {
@@ -71,6 +72,11 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
         //this.sortData()
         this.stationSelected$ = of(this.stationData)
         this.drawChart()
+        console.log(data[0].id)
+        let UpdateObservable =  this.placesService.getUpdates(data[0].id);  // 1
+        UpdateObservable.subscribe((latestStatus: Station) => {  // 2
+          console.log("what",latestStatus)  // 3
+      });  // 4
       });
 
     this.subscribeIntervalOneHour()
@@ -130,7 +136,7 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
     this.averageHourNumber = 0;
     this.moveAverage = [];
     for (let i = 0; i < this.stationData.length; i++) {
-      let temp: moveAverage = {} as any;
+      let temp: MoveAverage = {} as any;
       this.averageHourNumber = this.averageHourNumber + this.stationData[i].availableDocks.valueOf();
       temp.availableDocks = Number(this.averageHourNumber / (i + 1));
       temp.lastCommunicationTime = this.stationData[i].lastCommunicationTime;
@@ -142,7 +148,7 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
     this.averageDayNumber = 0;
     this.moveAverageDay = [];
     for (let i = 0; i < this.stationDataDay.length; i++) {
-      let temp: moveAverage = {} as any;
+      let temp: MoveAverage = {} as any;
       this.averageDayNumber = this.averageDayNumber + this.stationDataDay[i].availableDocks.valueOf();
       temp.availableDocks = Number(this.averageDayNumber / (i + 1));
       temp.lastCommunicationTime = this.stationDataDay[i].lastCommunicationTime;
@@ -286,7 +292,7 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
       .attr('class', 'line')
       .attr('d', this.line(this.stationData));
 
-    this.line1 = d3Shape.line<moveAverage>()
+    this.line1 = d3Shape.line<MoveAverage>()
     this.line1.x((d: any) => this.x(new Date(d.lastCommunicationTime.valueOf())))
       .y((d: any) => this.y(d.availableDocks.valueOf()));
     this.svg.append('path')
@@ -296,7 +302,7 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
       .style("opacity", 0);
 
 
-    this.line2 = d3Shape.line<moveAverage>()
+    this.line2 = d3Shape.line<MoveAverage>()
     this.line2.x((d: any) => this.x(new Date(d.lastCommunicationTime.valueOf())))
       .y((d: any) => this.y(d.availableDocks.valueOf()));
     this.svg.append('path')

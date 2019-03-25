@@ -50,13 +50,12 @@
 const express = require('express');
 
 var pg = require('pg');
-
+const router = express.Router();
 const app = express();
-var bodyParser = require('body-parser');
-const http = require('http').Server(app);
-const moment = require('moment');
-const io = require('socket.io')(http);
 
+var bodyParser = require('body-parser');
+
+const moment = require('moment');
 
 // Connect to elasticsearch Server
 
@@ -73,17 +72,7 @@ var conString = "pg://postgres:root@127.0.0.1:5432/chicago_divvy_stations";
 var pgClient = new pg.Client(conString);
 pgClient.connect();
 
-pgClient.query('LISTEN events')
-
-pgClient.on('notification', (msg) => {
-    console.log(msg.payload);
-    io.sockets.emit('market', '1');
-})
-
-
 var find_places_task_completed = false;             
-
-const router = express.Router();
 
 
 app.use(bodyParser.urlencoded({
@@ -105,6 +94,7 @@ var stations_found = [];
 var place_selected;
 var station_selected;
 var station_selected_info = [];
+var thisID;
 
 /////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
@@ -249,8 +239,6 @@ router.route('/stations/selected_seven_day').post((req, res) => {
  
 });
 
-
-
 router.route('/stations/find').post((req, res) => {
 
     var str = JSON.stringify(req.body, null, 4);
@@ -314,7 +302,7 @@ async function find_selected_stations_from_divvy(query) {
         station_selected_info.push(station);
 
     }
-
+    
 }
 
 
@@ -439,9 +427,26 @@ async function find_places_from_yelp(place, where) {
       
 }
 
-
-
 app.use('/', router);
+const http = require('http')
+var server = app.listen(4000, () => console.log('Express server running on port 4000'));
+var io = require('socket.io').listen(server);
 
-app.listen(4000, () => console.log('Express server running on port 4000'));
 
+pgClient.query('LISTEN events')
+
+pgClient.on('notification', (msg) => {
+        var obj = JSON.parse(msg.payload);
+        if (obj.data.id == 172) {
+            var data = obj.data
+            io.sockets.emit("172", data);
+        }
+       
+        /* if ( obj.data.id == 44){
+            console.log(obj);
+        } */
+    
+})
+io.on('connection', function (socket) {
+    console.log('a user connected');
+  });
