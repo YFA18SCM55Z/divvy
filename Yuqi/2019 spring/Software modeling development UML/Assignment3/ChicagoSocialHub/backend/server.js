@@ -436,28 +436,22 @@ var io = require('socket.io').listen(server);
 pgClient.query('LISTEN events')
 
 pgClient.on('notification', (msg) => {
-        var obj = JSON.parse(msg.payload);
-        if (obj.data.id == 172) {
-            plainTextDateTime =  moment(obj.data.lastcommunicationtime).format('YYYY-MM-DD, h:mm:ss a');
-            var station = {
-                "id": obj.data.id,
-                "stationName": obj.data.stationname,
-                "availableBikes": obj.data.availablebikes,
-                "availableDocks": obj.data.availabledocks,
-                "is_renting": obj.data.is_renting,
-                "lastCommunicationTime": plainTextDateTime,
-                "latitude": obj.data.latitude,    
-                "longitude": obj.data.longitude,
-                "status": obj.data.status,
-                "totalDocks": obj.data.totaldocks };
-            io.sockets.emit("172", station);
-        }
-       
-        /* if ( obj.data.id == 44){
-            console.log(obj);
-        } */
-    
-})
+        var obj = JSON.parse(msg.payload);  // msg.payload string 
+        plainTextDateTime =  moment(obj.data.lastcommunicationtime).format('YYYY-MM-DD, h:mm:ss a');
+        var station = {
+            "id": obj.data.id,
+            "stationName": obj.data.stationname,
+            "availableBikes": obj.data.availablebikes,
+            "availableDocks": obj.data.availabledocks,
+            "is_renting": obj.data.is_renting,
+            "lastCommunicationTime": plainTextDateTime,
+            "latitude": obj.data.latitude,    
+            "longitude": obj.data.longitude,
+            "status": obj.data.status,
+            "totalDocks": obj.data.totaldocks };
+        io.sockets.emit(obj.data.id, station);
+ })
+ 
 io.on('connection', function (socket) {
     console.log('a user connected');
   });

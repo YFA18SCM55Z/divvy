@@ -108,7 +108,7 @@ export class ListOfStationsComponent implements OnInit {
     }
 
 
-    this.placesService.findSelectedStations(id).subscribe(() => {
+    this.placesService.findSelectedStationsSevenDay(id).subscribe(() => {
       this.router.navigate(['/line_chart_divvy']);
     });
 

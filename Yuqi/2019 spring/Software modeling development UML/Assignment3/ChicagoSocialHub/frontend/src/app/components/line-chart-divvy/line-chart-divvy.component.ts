@@ -40,6 +40,7 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
   private line2: d3Shape.Line<MoveAverage>;
   private xAxis: any;
   private yAxis: any;
+  private whichScale: any;
   private subscription: ISubscription;
   private moveAverage: MoveAverage[] = [];
   private averageHourNumber: number;
@@ -50,8 +51,8 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
 
   @Input() stationSelected$: Observable<Station[]>
   stationData: Station[]
-  stationDataDay: Station[]
   stationDataSevenDay: Station[]
+  stationDataOneDay: Station[]
   thisID: any
 
   constructor(private placesService: PlacesService) {
@@ -60,28 +61,58 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
 
   }
 
-  updateStationDataWithinOneHour() {
-    for (let i = 0; i < this.stationData.length; i ++) {
-      if(this.stationData[i]) {
-        var dateBegin = new Date();
-        var dateEnd = new Date(this.stationData[i].lastCommunicationTime.valueOf())
-        var dateDiff = dateBegin.getTime() - dateEnd.getTime();
-        var leave1=dateDiff%(24*3600*1000);
-        var hours=Math.ceil(leave1/(3600*1000));
-        if ( hours > 1 ) {
-          this.stationData = this.stationData.splice(1, this.stationData.length)
-        } else {
-          break;
-        }
+  updateStationDataWithinSevenDay() {
+    var dateBegin = new Date();
+    for (let i = 0; i < this.stationDataSevenDay.length; i++) {
+      var dateEnd = new Date(this.stationDataSevenDay[i].lastCommunicationTime.valueOf())
+      var dateDiff = dateBegin.getTime() - dateEnd.getTime();
+      var leave1 = dateDiff % (24 * 3600 * 1000);
+      var hours = Math.ceil(leave1 / (3600 * 1000));
+      if (hours > 168) {
+        this.stationDataSevenDay = this.stationDataSevenDay.splice(1, this.stationDataSevenDay.length)
       } else {
         break;
       }
     }
-    this.stationSelected$ = of(this.stationData)
-    this.updateChart()
+    return this.stationDataSevenDay
+  }
+
+
+  getWithinOneHourData() {
+    var stationDataOneHour: Station[] = []
+    var dateBegin = new Date();
+    for(let i = this.stationDataSevenDay.length - 1; i >= 0; i--) {
+      var dateEnd = new Date(this.stationDataSevenDay[i].lastCommunicationTime.valueOf())
+      var dateDiff = dateBegin.getTime() - dateEnd.getTime();
+      var leave1 = dateDiff % (24 * 3600 * 1000);
+      var hours = Math.ceil(leave1 / (3600 * 1000));
+      if (hours <= 1) {
+        stationDataOneHour = [this.stationDataSevenDay[i]].concat(stationDataOneHour)
+      } else {
+        break;
+      } 
+    }
+    return stationDataOneHour
+  }
+
+  getWithinTwentyFourHourData() {
+    var stationDataOneDay: Station[] = []
+    var dateBegin = new Date();
+    for(let i = this.stationDataSevenDay.length - 1; i >= 0; i--) {
+      var dateEnd = new Date(this.stationDataSevenDay[i].lastCommunicationTime.valueOf())
+      var dateDiff = dateBegin.getTime() - dateEnd.getTime();
+      var dayDiff = Math.ceil(dateDiff / (24 * 3600 * 1000));
+      if (dayDiff <= 1) {
+        stationDataOneDay = [this.stationDataSevenDay[i]].concat(stationDataOneDay)
+      } else {
+        break;
+      } 
+    }
+    return stationDataOneDay
   }
 
   ngOnInit() {
+    this.whichScale = 0;
     this.averageHourNumber = 0;
     this.averageDayNumber = 0;
     this.initSvg();
@@ -90,66 +121,77 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
       .getSelectedStation()
       .subscribe((data: Station[]) => {
         this.thisID = data[0].id
-        this.stationData = data
+        this.stationDataSevenDay = data
+        this.stationData = this.getWithinOneHourData()
         this.stationSelected$ = of(this.stationData)
         this.drawChart()
         console.log(this.stationData)
-        let UpdateObservable =  this.placesService.getUpdates(this.thisID);  
-        this.subscription = UpdateObservable.subscribe((latestStatus: Station) => {  
-          this.stationData.push(latestStatus)
-          this.updateStationDataWithinOneHour()
-      }); 
+        let UpdateObservable = this.placesService.getUpdates(this.thisID);
+        this.subscription = UpdateObservable.subscribe((latestStatus: Station) => {
+          this.stationDataSevenDay.push(latestStatus)
+          this.stationDataSevenDay = this.updateStationDataWithinSevenDay()
+          if(this.whichScale == 0) {
+          this.stationData = this.getWithinOneHourData()
+          console.log("what??????",this.stationData)
+          this.stationSelected$ = of(this.stationData)
+          this.updateChart()
+          }
+          if (this.whichScale == 1) {
+            this.stationData = this.getWithinTwentyFourHourData()
+            this.stationSelected$ = of(this.stationData)
+            this.updateChart()
+          }
+          if (this.whichScale == 2) {
+            this.stationData = this.stationDataSevenDay
+            this.stationSelected$ = of(this.stationData)
+            this.updateChart()
+          }
+          if (this.whichScale == 3) {
+            this.stationData = this.getWithinOneHourData()
+            this.stationSelected$ = of(this.stationData)
+            this.stationDataOneDay = this.getWithinTwentyFourHourData()
+            this.setMoveAverageHour()
+            this.setMoveAverageDay()
+            this.updateChartSMA()
+          }
+        });
       });
   }
 
-   subscribeIntervalOneHour() {
+  subscribeIntervalOneHour() {
     this.timeTitle = 'One Hour'
-    if (this.subscription) {
-      this.subscription.unsubscribe()
-    }
-    this.placesService
-      .findSelectedStations(this.thisID)
-      .subscribe(() => {
-        this.getSelectedStation()
-      });
-    
-  } 
+    this.whichScale = 0
+    this.stationData = this.getWithinOneHourData()
+    this.stationSelected$ = of(this.stationData)
+    this.updateChart()
+  }
 
   subscribeIntervalTwentyFourHour() {
     this.timeTitle = 'Twenty Four Hours'
-    if (this.subscription) {
-      this.subscription.unsubscribe()
-    }
-    this.placesService
-    .findSelectedStations(this.thisID)
-    .subscribe(() => {
-      this.getSelectedStation()
-    });
+    this.whichScale = 1
+    this.stationData = this.getWithinTwentyFourHourData()
+    this.stationSelected$ = of(this.stationData)
+    this.updateChart()
   }
 
   subscribeIntervalSevenDay() {
     this.timeTitle = 'Seven Days'
-    if (this.subscription) {
-      this.subscription.unsubscribe()
-    }
-    this.updateDateTwoMinutesSevenDay();
-    this.subscription = interval(1000 * 1 * 60).subscribe(() => {
-      console.log("calling 7");
-      this.updateDateTwoMinutesSevenDay();
-    });
+    this.whichScale = 2
+    this.stationData = this.stationDataSevenDay
+    console.log(this.stationDataSevenDay)
+    this.stationSelected$ = of(this.stationData)
+    this.updateChart()
   }
 
   subscribeIntervalSMA() {
     this.timeTitle = 'SMA CHART'
-    if (this.subscription) {
-      this.subscription.unsubscribe()
-    }
-    this.updateDateSMA();
-
-    this.subscription = interval(1000 * 1 * 60).subscribe(() => {
-      console.log("calling SMA");
-      this.updateDateSMA();
-    });
+    this.whichScale = 3
+    this.stationData = this.getWithinOneHourData()
+    this.stationSelected$ = of(this.stationData)
+    this.stationDataOneDay = this.getWithinTwentyFourHourData()
+    this.setMoveAverageHour()
+    this.setMoveAverageDay()
+    this.updateChartSMA()
   }
 
 
@@ -168,95 +210,14 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
   setMoveAverageDay() {
     this.averageDayNumber = 0;
     this.moveAverageDay = [];
-    for (let i = 0; i < this.stationDataDay.length; i++) {
+    for (let i = 0; i < this.stationDataOneDay.length; i++) {
       let temp: MoveAverage = {} as any;
-      this.averageDayNumber = this.averageDayNumber + this.stationDataDay[i].availableDocks.valueOf();
+      this.averageDayNumber = this.averageDayNumber + this.stationDataOneDay[i].availableDocks.valueOf();
       temp.availableDocks = Number(this.averageDayNumber / (i + 1));
-      temp.lastCommunicationTime = this.stationDataDay[i].lastCommunicationTime;
+      temp.lastCommunicationTime = this.stationDataOneDay[i].lastCommunicationTime;
       this.moveAverageDay.push(temp);
     }
   }
-
-  getSelectedStation() {
-    this.placesService
-      .getSelectedStation()
-      .subscribe((data: Station[]) => {
-        this.stationData = data
-        //this.sortData()
-        this.stationSelected$ = of(this.stationData)
-        this.updateChart()
-        let UpdateObservable =  this.placesService.getUpdates(this.thisID);  
-        this.subscription = UpdateObservable.subscribe((latestStatus: Station) => {  
-          this.stationData.push(latestStatus)
-          this.updateStationDataWithinOneHour()
-      }); 
-      });
-  }
-
-  getSelectedStationDay() {
-    this.placesService
-      .getSelectedStation()
-      .subscribe((data: Station[]) => {
-        this.stationDataDay = data
-        //this.sortDataDay()
-        console.log("stationdate:", this.stationDataDay)
-        this.setMoveAverageDay()
-        console.log("daydata", this.moveAverageDay)
-        this.updateChartSMA()
-      });
-  }
-
-  updateDateTwoMinutesTwentyFourHour() {
-    this.placesService
-      .findSelectedStationsTwentyFourHour(this.thisID)
-      .subscribe(() => {
-        //console.log("updateDateTwoMinutes:", this.stationData[1].id)
-        this.getSelectedStation()
-      });
-  }
-
-  updateDateTwoMinutesSevenDay() {
-    this.placesService
-      .findSelectedStationsSevenDay(this.thisID)
-      .subscribe(() => {
-        //console.log("updateDateTwoMinutes:", this.stationData[1].id)
-        this.getSelectedStation()
-      });
-  }
-
-  updateDateSMA() {
-    this.placesService
-      .findSelectedStations(this.thisID)
-      .subscribe(() => {
-        this.placesService
-          .getSelectedStation()
-          .subscribe((data: Station[]) => {
-            this.stationData = data
-            //this.sortData()
-            this.setMoveAverageHour()
-            console.log("hour", this.moveAverage)
-            this.stationSelected$ = of(this.stationData)
-          });
-        this.placesService
-          .findSelectedStationsTwentyFourHour(this.thisID)
-          .subscribe(() => {
-            this.getSelectedStationDay()
-            //console.log("day", this.moveAverageDay)
-          });
-      });
-  }
-
-/*  sortData() {
-    this.stationData.sort(function (a, b) {
-      return <any>new Date(a.lastCommunicationTime.valueOf()) - <any>new Date(b.lastCommunicationTime.valueOf());
-    });
-  }
-
-  sortDataDay() {
-    this.stationDataDay.sort(function (a, b) {
-      return <any>new Date(a.lastCommunicationTime.valueOf()) - <any>new Date(b.lastCommunicationTime.valueOf());
-    });
-  }**/
 
   drawChart() {
     this.drawAxis();
@@ -329,6 +290,17 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
       .style("opacity", 0);
   }
 
+  maxData (d1, d2, d3) {
+    var temp = d1;
+    if (d2 > temp) {
+      temp = d2
+    }
+    if (d3 > temp) {
+      temp = d3
+    }
+    return temp
+  }
+
 
   updateChart() {
     var body = d3.select('body').transition();
@@ -362,6 +334,7 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
   }
 
   updateChartSMA() {
+    var maximum : any;
     var body = d3.select('body').transition();
     body.selectAll(".d-inline-block")
       .style("opacity", 0);
@@ -369,10 +342,14 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
     /* this.line.x((d: any) => this.x(new Date(d.lastCommunicationTime.valueOf())))
       .y((d: any) => this.y(d.availableDocks.valueOf())) */
     this.cutMoveAverageDay = this.moveAverageDay.slice(-this.stationData.length)
-    //console.log(this.cutMoveAverageDay)
-
+   
+    maximum = this.maxData(d3Array.max(this.cutMoveAverageDay, (d) => Number(d.availableDocks.valueOf()))
+            ,d3Array.max(this.moveAverage, (d) => Number(d.availableDocks.valueOf()))
+            ,d3Array.max(this.stationData, (d) => Number(d.availableDocks.valueOf())))
     this.x.domain(d3Array.extent(this.stationData, (d) => new Date(d.lastCommunicationTime.valueOf())));
-    this.y.domain([0, d3Array.max(this.cutMoveAverageDay, (d) => Number(d.availableDocks.valueOf())) + 5]);
+    
+    this.y.domain([0, Number(maximum) + 5]);
+    
 
     var svg = d3.select('svg').transition();
 
@@ -403,6 +380,7 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
     if (this.subscription) {
       this.subscription.unsubscribe();
     }
+    this.placesService.soketOff();
   }
 
 }
