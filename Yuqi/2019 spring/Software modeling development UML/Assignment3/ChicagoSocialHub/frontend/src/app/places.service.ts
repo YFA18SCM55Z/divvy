@@ -98,7 +98,7 @@ export class PlacesService {
     return divvySubObservable;
   }
 
-  soketOff() {
+  socketOff() {
     this.socket.removeAllListeners();
   }
 
@@ -113,28 +113,6 @@ export class PlacesService {
 
     return this.http.post(`${this.uri}/stations/find`, find_stations_at, httpOptions);
 
-  }
-
-  findSelectedStations(id) {
-    const find_selected_stations = {
-      id: id
-    };
-
-    //console.log("find selected stations",id)
-    var str = JSON.stringify(find_selected_stations, null, 2);
-
-    return this.http.post(`${this.uri}/stations/selected`, find_selected_stations, httpOptions);
-  }
-
-  findSelectedStationsTwentyFourHour(id) {
-    const find_selected_stations = {
-      id: id
-    };
-
-    //console.log("find selected stations",id)
-    var str = JSON.stringify(find_selected_stations, null, 2);
-
-    return this.http.post(`${this.uri}/stations/selected_twenty_four_hour`, find_selected_stations, httpOptions);
   }
 
   findSelectedStationsSevenDay(id) {

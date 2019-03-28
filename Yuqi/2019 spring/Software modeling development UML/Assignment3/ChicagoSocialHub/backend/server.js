@@ -94,7 +94,6 @@ var stations_found = [];
 var place_selected;
 var station_selected;
 var station_selected_info = [];
-var thisID;
 
 /////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
@@ -159,7 +158,7 @@ router.route('/places/find').post((req, res) => {
 
 });
 
-router.route('/stations/selected').post((req, res) => {
+router.route('/stations/selected_seven_day').post((req, res) => {
     var str = JSON.stringify(req.body, null, 4);
     for (var i = 0,len = stations_found.length; i < len; i++) {
 
@@ -173,66 +172,12 @@ router.route('/stations/selected').post((req, res) => {
 
     const query1 = {
         // give the query a unique name
-        name: 'fetch-divvy-selected-station',
-        text: ' SELECT * FROM divvy_stations_logs WHERE id = $1 AND lastcommunicationtime >= (NOW() - INTERVAL \'1 hours\' ) order by lastcommunicationtime',
-        values: [station_selected.id]
-    }
-
-    find_selected_stations_from_divvy(query1).then(function (response) {
-        var hits = response;
-        res.json({'station_selected_info': 'Added successfully'});
-    });
- 
-});
-
-
-router.route('/stations/selected_twenty_four_hour').post((req, res) => {
-    var str = JSON.stringify(req.body, null, 4);
-    for (var i = 0,len = stations_found.length; i < len; i++) {
-
-        if ( stations_found[i].id === req.body.id ) { // strict equality test
-
-            station_selected = stations_found[i];
-
-            break;
-        }
-    }
-
-    const query2 = {
-        // give the query a unique name
-        name: 'fetch-divvy-selected-station_twenty_four_hour',
-        text: ' SELECT * FROM divvy_stations_logs WHERE id = $1 AND lastcommunicationtime >= (NOW() - INTERVAL \'24 hours\' ) order by lastcommunicationtime',
-        values: [station_selected.id]
-    }
-
-    find_selected_stations_from_divvy(query2).then(function (response) {
-        var hits = response;
-        res.json({'station_selected_info': 'Added successfully'});
-    });
- 
-});
-
-
-router.route('/stations/selected_seven_day').post((req, res) => {
-    var str = JSON.stringify(req.body, null, 4);
-    for (var i = 0,len = stations_found.length; i < len; i++) {
-
-        if ( stations_found[i].id === req.body.id ) { // strict equality test
-
-            station_selected = stations_found[i];
-
-            break;
-        }
-    }
-
-    const query3 = {
-        // give the query a unique name
         name: 'fetch-divvy-selected-station_seven_day',
         text: ' SELECT * FROM divvy_stations_logs WHERE id = $1 AND lastcommunicationtime >= (NOW() - INTERVAL \'168 hours\' ) order by lastcommunicationtime',
         values: [station_selected.id]
     }
 
-    find_selected_stations_from_divvy(query3).then(function (response) {
+    find_selected_stations_from_divvy(query1).then(function (response) {
         var hits = response;
         res.json({'station_selected_info': 'Added successfully'});
     });
@@ -428,10 +373,8 @@ async function find_places_from_yelp(place, where) {
 }
 
 app.use('/', router);
-const http = require('http')
 var server = app.listen(4000, () => console.log('Express server running on port 4000'));
 var io = require('socket.io').listen(server);
-
 
 pgClient.query('LISTEN events')
 
@@ -449,6 +392,7 @@ pgClient.on('notification', (msg) => {
             "longitude": obj.data.longitude,
             "status": obj.data.status,
             "totalDocks": obj.data.totaldocks };
+           
         io.sockets.emit(obj.data.id, station);
  })
  

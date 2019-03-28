@@ -36,6 +36,7 @@ import { FindComponent } from './components/find/find.component';
 import { ListOfPlacesComponent } from './components/list-of-places/list-of-places.component';
 import { ListOfStationsComponent } from './components/list-of-stations/list-of-stations.component';
 import { LineChartDivvyComponent } from './components/line-chart-divvy/line-chart-divvy.component';
+import { LineChartDivvyChildComponent } from './components/line-chart-divvy/line-chart-divvy-child/line-chart-divvy-child.component';
 
 
 
@@ -56,6 +57,7 @@ const routes: Routes = [
     ListOfPlacesComponent,
     ListOfStationsComponent,
     LineChartDivvyComponent,
+    LineChartDivvyChildComponent,
   ],
   imports: [
     BrowserModule,
