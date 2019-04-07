@@ -161,6 +161,9 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
 
 
   ngOnDestroy() {
+    this.placesService.removeRegisteredIdOnDestory(this.thisID).subscribe(()=> {
+      console.log("removed")
+    });
     this.placesService.socketOff();
   }
 

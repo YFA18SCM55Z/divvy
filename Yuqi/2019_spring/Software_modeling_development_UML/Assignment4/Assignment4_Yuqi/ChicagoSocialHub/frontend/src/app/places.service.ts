@@ -119,8 +119,15 @@ export class PlacesService {
     };
 
     var str = JSON.stringify(find_selected_stations, null, 2);
-    
+
     return this.http.post(`${this.uri}/stations/selected_seven_day`, find_selected_stations, httpOptions);
   }
 
+  removeRegisteredIdOnDestory(id) {
+    const stationIdGoingToRemove = {
+      id: id
+    };
+    var str = JSON.stringify(stationIdGoingToRemove, null, 2);
+    return this.http.post(`${this.uri}/stations/removeRegisteredIdOnDestory`, stationIdGoingToRemove, httpOptions);
+  }
 }
