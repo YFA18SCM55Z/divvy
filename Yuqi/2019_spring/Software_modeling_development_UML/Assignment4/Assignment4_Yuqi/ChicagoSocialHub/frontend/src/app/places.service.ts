@@ -84,7 +84,9 @@ export class PlacesService {
     return this.http.post(`${this.uri}/places/find`, find_places_at, httpOptions);
 
   }
+
   socket = socketio(this.uri);
+
   getUpdates(thisID) {
     console.log("listen on", thisID);
     let divvySub = new Subject<Station>();

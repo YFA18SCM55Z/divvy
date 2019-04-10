@@ -12,8 +12,6 @@ import * as d3Shape from 'd3-shape';
 import * as d3Array from 'd3-array';
 import * as d3Axis from 'd3-axis';
 import * as time from 'd3-time'
-
-
 import 'd3-transition';
 
 
@@ -189,18 +187,6 @@ export class LineChartDivvyChildComponent implements OnInit, OnChanges {
     this.y = d3Scale.scaleLinear().range([this.height, 0]);
   }
 
-  customTickFunc() {
-    var startTime = new Date(this.stationData[0].lastCommunicationTime.valueOf()),
-      endTime = new Date(), times = [];
-    endTime.setUTCDate(endTime.getUTCDate() + 1);
-    console.log(new Date(endTime.getTime() - 60*60*1000))
-    while (startTime < endTime) {
-      startTime.setUTCDate(startTime.getUTCDate() + 2);
-      times.push(new Date(startTime));
-    }
-    return times;
-  }
-
   drawAxis() {
     //this.x.domain([new Date(new Date().getTime() - 60*60*1000), new Date()])
     this.x.domain(d3Array.extent(this.stationData, (d) => new Date(d.lastCommunicationTime.valueOf())));
@@ -280,7 +266,7 @@ export class LineChartDivvyChildComponent implements OnInit, OnChanges {
     }
     if (this.whichScale == 1) {
       this.xAxis = d3Axis.axisBottom(this.x).ticks(time.timeHour.every(1));
-    } 
+    }
     if (this.whichScale == 2) {
       this.xAxis = d3Axis.axisBottom(this.x).ticks(time.timeDay.every(1));
     }

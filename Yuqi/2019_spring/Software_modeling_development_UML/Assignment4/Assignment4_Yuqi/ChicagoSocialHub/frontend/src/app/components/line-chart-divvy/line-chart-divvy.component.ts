@@ -111,7 +111,7 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
     return updateDateArray;
   }
 
-  stationDataSevenDayHas(stationData) {
+  stationDataSevenDayDuplicate(stationData) {
     return this.stationDataSevenDay.some(station_selected_info => station_selected_info.id === stationData.id
       && station_selected_info.stationName === stationData.stationName
       && station_selected_info.availableDocks === stationData.availableDocks
@@ -146,11 +146,10 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
         this.updatedStationDataSevenDay = data;
         this.updateDataOneDay = this.getWithinOneDayData();
         this.updateDataOneHour = this.getWithinOneHourData();
-
         let UpdateObservable = this.placesService.getUpdates(this.thisID);
         UpdateObservable.subscribe((latestStatus: Station) => {
-          if (!this.stationDataSevenDayHas(latestStatus)) {
-            console.log("latestStatus:",latestStatus)
+          if (!this.stationDataSevenDayDuplicate(latestStatus)) {
+            console.log("latestStatus:", latestStatus)
             this.updateDataSevenDay = this.stationDataSevenDay.concat([latestStatus]);
             this.updateDataOneDay = this.stationDataOneDay.concat([latestStatus]);
             this.updateDataOneHour = this.stationDataOneHour.concat([latestStatus]);
@@ -161,7 +160,7 @@ export class LineChartDivvyComponent implements OnInit, OnDestroy {
 
 
   ngOnDestroy() {
-    this.placesService.removeRegisteredIdOnDestory(this.thisID).subscribe(()=> {
+    this.placesService.removeRegisteredIdOnDestory(this.thisID).subscribe(() => {
       console.log("removed")
     });
     this.placesService.socketOff();

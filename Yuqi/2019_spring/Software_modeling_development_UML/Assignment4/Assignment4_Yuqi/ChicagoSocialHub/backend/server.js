@@ -173,13 +173,11 @@ router.route('/stations/selected_seven_day').post((req, res) => {
 
 
     stationIdsToMonitor.push(station_selected.id);
-
-    stationIdsToMonitor.push()
     find_selected_stations_from_divvy(station_selected.id).then(function (response) {
         var hits = response;
         res.json(station_selected_info);
     }, function (response) {
-        console.log(response);
+        console.log(response); // log error
     });
 
 });
@@ -242,6 +240,17 @@ function withinSevenDays(dateBegin, dateEnd) {
         return false;
     }
 }
+
+function withinOneHour(dateBegin, dateEnd) {
+    var dateDiff = dateBegin.getTime() - dateEnd.getTime();
+    var leave1 = dateDiff % (24 * 3600 * 1000);
+    var hours = Math.ceil(leave1 / (3600 * 1000));
+    if (hours <= 1) {
+        return true;
+    } else {
+        return false;
+    }
+}
 /////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////
 
@@ -271,7 +280,7 @@ function find_selected_stations_from_divvy(id) {
             }
             // collect all the records
             response.hits.hits.forEach((hit) => {
-                plainTextDateTime = moment(hit._source.lastCommunicationTime).format('YYYY-MM-DD, h:mm:ss a');
+                plainTextDateTime = moment(hit._source.lastCommunicationTime).format('YYYY/MM/DD, h:mm:ss a');
 
                 var station = {
                     "id": hit._source.id,
@@ -431,7 +440,7 @@ async function find_places_from_yelp(place, where) {
 
 }
 
-function removeDuplicateIds(value, index, self) { 
+function removeDuplicateIds(value, index, self) {
     return self.indexOf(value) === index;
 }
 
@@ -461,7 +470,7 @@ setInterval(async function () {
             }
             // collect all the records
             response.hits.hits.forEach((hit) => {
-                plainTextDateTime = moment(hit._source.lastCommunicationTime).format('YYYY-MM-DD, h:mm:ss a');
+                plainTextDateTime = moment(hit._source.lastCommunicationTime).format('YYYY/MM/DD, h:mm:ss a');
 
                 var station = {
                     "id": hit._source.id,
@@ -476,7 +485,7 @@ setInterval(async function () {
                     "totalDocks": hit._source.totalDocks
                 };
                 var thisDateEnd = new Date(station.lastCommunicationTime.valueOf());
-                if (withinSevenDays(thisDateBegin, thisDateEnd)) {
+                if (withinOneHour(thisDateBegin, thisDateEnd)) {
                     io.sockets.emit(uniqueIds[i], station);
                 }
             });
