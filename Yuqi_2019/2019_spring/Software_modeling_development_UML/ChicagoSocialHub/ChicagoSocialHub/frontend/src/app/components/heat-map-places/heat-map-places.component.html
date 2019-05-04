@@ -1,0 +1,12 @@
+<div ngbDropdown class="d-inline-block">
+    <button class="btn btn-outline-primary" id="dropdownBasic1" ngbDropdownToggle>Review Counts</button>
+    <div ngbDropdownMenu aria-labelledby="dropdownBasic1">
+        <button class="dropdown-item" (click)="heatMapReviewCounts()">Review Counts </button>
+        <button class="dropdown-item" (click)="heatMapRatings()"> Ratings</button>
+    </div>
+</div>
+<div class="google-map">
+    <agm-map [(latitude)]="location.lat" [(longitude)]="location.lng" [(zoom)]="location.zoom" [disableDefaultUI]="true"
+        [zoomControl]="true" (mapReady)="onMapLoad($event)">
+    </agm-map>
+</div>
